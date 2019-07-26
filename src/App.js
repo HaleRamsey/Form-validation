@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Recaptcha from 'react-recaptcha';
 import './App.css';
 
 const emailRegex = RegExp(
@@ -10,7 +11,7 @@ const addressRegex = RegExp(
 );
 
 const phoneRegex = RegExp(
-  /^(\()?\d{3}(\))?(-|\s)?\d{3}(-|\s)\d{4}$/
+  /^\D?(\d{3})\D?\D?(\d{3})\D?(\d{4})$/
 );
 
 const formValid = ({ formErrors, ...rest }) => {
@@ -38,16 +39,20 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    this.handleSubscribe = this.handleSubscribe.bind(this);
+    this.recaptchaLoaded = this.recaptchaLoaded.bind(this);
+    this.verifyCallback = this.verifyCallback.bind(this);
+
     this.state = {
       firstName: null,
       lastName: null,
       email: null,
       address: null,
       phone: null,
-      educationLevel: null,
-      income: null,
-      checkbox: false,
-      title: "choose one",
+      educationLevel: "",
+      income: "",
+      isChecked: false,
+      isCaptcha: false,
 
       formErrors: {
         firstName: "",
@@ -55,28 +60,50 @@ class App extends Component {
         email: "",
         address: "",
         phone: "",
-        educationLevel: "",
-        income: "",
       }
-      
-      
+
+
     };
+
   }
 
   handleCheck = event => {
-    this.setState({ checkbox: event.target.checked });
+    console.log('called');
+    this.setState({ isChecked: event.target.checked });
   }
 
-  handleSelect = event => {
-    this.setState({ title: event.target.value });
+  handleSelectEducation = event => {
+    this.setState({ educationLevel: event.target.value });
+  }
+  handleSelectIncome = event => {
+    this.setState({ income: event.target.value });
+  }
+
+  recaptchaLoaded() {
+    console.log('captcha successfully loaded');
+  }
+
+  verifyCallback(response) {
+    if (response) {
+      this.setState({
+        isCaptcha: true
+      })
+    }
+  }
+
+  handleSubscribe() {
+    if (this.state.isCaptcha) {
+      alert('You have successfully subscribed!');
+    } else {
+      alert('Please verify that you are a human!');
+    }
   }
 
 
   handleSubmit = e => {
     e.preventDefault();
 
-    //if (true) {
-    if (formValid(this.state)) {
+    if (formValid(this.state) || this.state.educationLevel || this.state.income) {
       console.log(`
       --SUBMITTING--
       First Name: ${this.state.firstName}
@@ -92,6 +119,10 @@ class App extends Component {
       console.error("FORM INVALID - DISPLAY ERROR MESSAGE");
     }
   };
+
+
+
+
 
   handleChange = e => {
     e.preventDefault();
@@ -130,11 +161,11 @@ class App extends Component {
             : "Enter as follows xxx-xxx-xxxx";
         break;
       case 'educationLevel':
-        
+        this.setState({ educationLevel: e.target.value });
         break;
-        case 'income':
-          
-          break;
+      case 'income':
+        this.setState({ income: e.target.value });
+        break;
       default:
         break;
     }
@@ -227,41 +258,51 @@ class App extends Component {
               )}
             </div>
 
+
+
             <div className="educationLevel">
               <label htmlFor="educationLevel">Education Level</label>
               <div className="dropdown">
-                <select id="dropdown" required="">
-                  <option value="">Choose an option</option>
-                  <option value="1">High School Graduate</option>
-                  <option value="2">College Graduate</option>
-                  <option value="3">Master's Degree</option>
-                  <option value="4">PHD</option>
+                <select value={this.state.educationLevel} onChange={this.handleSelectEducation}>
+                  <option value="Choose an option">Choose an option</option>
+                  <option value="High School Graduate">High School Graduate</option>
+                  <option value="College Graduate">College Graduate</option>
+                  <option value="Master's Degree">Master's Degree</option>
+                  <option value="Ph.D">Ph.D</option>
                 </select>
               </div>
             </div>
-
 
 
             <div className="income">
               <label htmlFor="income">Income (Yearly)</label>
               <div className="dropdown">
-                <select value={this.state.title} onChange={this.handleSelect} required="">
-                  <option value="">Choose an option</option>
-                  <option value="1">Less than $50K</option>
-                  <option value="2">Between $50K - $100K</option>
-                  <option value="3">Above $100K</option>
+                <select value={this.state.income} onChange={this.handleSelectIncome}>
+                  <option value="Choose an option">Choose an option</option>
+                  <option value="Less than $50K">Less than $50K</option>
+                  <option value="Between $50K - $100K">Between $50K - $100K</option>
+                  <option value="Above $100K">Above $100K</option>
                 </select>
               </div>
 
             </div>
 
-            <li>
-              <input
-                type="checkbox"
-                checked={this.state.checkbox}
-                onChange={this.handleCheck}
+            <label>
+              <input type="checkbox" checked={this.state.isChecked} onChange={this.handleCheck}></input>
+              <span> Agree to terms and conditions</span></label>
+
+
+            <div>
+              <div className="convert" onClick={this.handleSubscribe}>Subscribe</div>
+
+              <Recaptcha
+                sitekey="6LeBva8UAAAAALtTseBZoC2hnhfukB5EJF288nvm"
+                render="explicit"
+                onloadCallback={this.recaptchaLoaded}
+                verifyCallback={this.verifyCallback}
               />
-            </li>
+            </div>
+
 
             <div className="submitForm">
               <button onClick={this.handleSubmit}>Sumbit Form</button>
